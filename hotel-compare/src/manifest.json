@@ -1,0 +1,32 @@
+{
+  "name": "酒店比价",
+  "appid": "__UNI__HOTEL_COMPARE",
+  "description": "跨平台酒店价格对照工具",
+  "versionName": "1.0.0",
+  "versionCode": "100",
+  "transformPx": false,
+  "mp-weixin": {
+    "appid": "wx92700dda6d0c0a06",
+    "setting": {
+      "urlCheck": false,
+      "es6": true,
+      "postcss": true,
+      "minified": true,
+      "newFeature": true
+    },
+    "usingComponents": true,
+    "permission": {
+      "scope.userLocation": {
+        "desc": "用于获取您的位置，搜索周边酒店"
+      }
+    },
+    "requiredPrivateInfos": ["getLocation", "chooseLocation"],
+    "lazyCodeLoading": "requiredComponents"
+  },
+  "h5": {
+    "title": "酒店比价",
+    "router": {
+      "mode": "hash"
+    }
+  }
+}
