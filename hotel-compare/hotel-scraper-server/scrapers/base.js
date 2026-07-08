@@ -22,7 +22,6 @@ class BaseScraper {
     const StealthPlugin = require('puppeteer-extra-plugin-stealth')
     puppeteer.use(StealthPlugin())
 
-    // 优先使用系统安装的 Chromium/Chrome
     const execPath = process.env.CHROMIUM_PATH
       || '/usr/bin/chromium-browser'
     const launchOpts = {
@@ -48,9 +47,10 @@ class BaseScraper {
    * 带重试的爬取
    * @param {string} hotelName 酒店名
    * @param {string} city 城市
-   * @returns {object|null} 标准化后的价格数据
+   * @param {string} address 酒店地址（用于精确匹配）
+   * @returns {object|null} 标准化后的价格数据，未找到返回 null
    */
-  async scrapeWithRetry(hotelName, city) {
+  async scrapeWithRetry(hotelName, city, address) {
     let lastError = null
 
     for (let i = 0; i <= config.maxRetries; i++) {
@@ -59,10 +59,15 @@ class BaseScraper {
           console.log(`[${this.platform}] 第 ${i} 次重试: ${hotelName}`)
           await this.delay()
         }
-        const result = await this.scrape(hotelName, city)
-        if (result) {
-          console.log(`[${this.platform}] ✅ 成功: ${hotelName}`)
+        const result = await this.scrape(hotelName, city, address)
+        if (result && result.minPrice > 0) {
+          console.log(`[${this.platform}] ✅ 成功: ${hotelName} → ¥${result.minPrice}`)
           return result
+        }
+        // 未找到匹配酒店，不算错误，返回 null
+        if (result && result.minPrice === 0) {
+          console.log(`[${this.platform}] ⚠️ 未找到匹配酒店: ${hotelName}`)
+          return null
         }
       } catch (err) {
         lastError = err
@@ -76,9 +81,12 @@ class BaseScraper {
 
   /**
    * 子类必须实现：执行实际爬取逻辑
-   * @returns {object|null} { minPrice, roomTypes, rating, reviewCount, jumpUrl }
+   * @param {string} hotelName 酒店名
+   * @param {string} city 城市
+   * @param {string} address 酒店地址
+   * @returns {object|null} { minPrice, roomTypes, rating, reviewCount, jumpUrl } 或 null
    */
-  async scrape(hotelName, city) {
+  async scrape(hotelName, city, address) {
     throw new Error(`子类必须实现 scrape() 方法`)
   }
 

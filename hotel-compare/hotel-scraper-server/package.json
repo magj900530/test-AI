@@ -1,0 +1,17 @@
+{
+  "name": "hotel-scraper-server",
+  "version": "1.0.0",
+  "description": "酒店价格爬虫后端服务 — Puppeteer 代理抓取",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "puppeteer-core": "^23.0.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "node-cache": "^5.1.2"
+  }
+}

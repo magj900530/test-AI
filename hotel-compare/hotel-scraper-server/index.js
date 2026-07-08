@@ -1,12 +1,14 @@
 /**
  * 酒店价格爬虫后端服务
  * Express + Puppeteer 代理抓取四平台价格
+ *
+ * 重要：只返回实际抓取到的平台价格，不做任何估算/兜底。
+ * 酒店不在某平台 → 该平台不返回数据。
  */
 
 const express = require('express')
 const config = require('./config')
 const cache = require('./cache')
-const { getMockPrices } = require('./mock-data')
 const { normalize } = require('./normalizer')
 
 // 引入各平台爬虫
@@ -30,17 +32,18 @@ const scrapers = {
  * GET /api/hotels/prices
  * 查询单个酒店的实时价格
  *
- * Query: ?hotelName=深圳福田香格里拉大酒店&city=深圳
+ * Query: ?hotelName=深圳福田香格里拉大酒店&city=深圳&address=福田区益田路4088号
  * Response: { hotelName, updatedAt, platforms: [...] }
+ *   仅返回实际抓取到酒店的平台（名称+地址匹配通过）
  */
 app.get('/api/hotels/prices', async (req, res) => {
-  const { hotelName, city = '' } = req.query
+  const { hotelName, city = '', address = '' } = req.query
 
   if (!hotelName) {
     return res.status(400).json({ error: '缺少 hotelName 参数' })
   }
 
-  console.log(`\n🔍 查询: "${hotelName}" (${city || '全国'})`)
+  console.log(`\n🔍 查询: "${hotelName}" (${city || '全国'}) [${address || '无地址'}]`)
 
   // 1. 先查缓存
   const cached = cache.get(hotelName, city)
@@ -52,12 +55,15 @@ app.get('/api/hotels/prices', async (req, res) => {
     })
   }
 
-  // 2. 并行爬取所有平台
+  // 2. 并行爬取所有平台（传入 address 用于精确匹配）
   const platformTasks = Object.entries(scrapers).map(async ([name, scraper]) => {
     try {
-      const raw = await scraper.scrapeWithRetry(hotelName, city)
-      if (raw) {
+      const raw = await scraper.scrapeWithRetry(hotelName, city, address)
+      if (raw && raw.minPrice > 0) {
+        console.log(`[${name}] ✅ 已找到: ¥${raw.minPrice}`)
         return normalize(name, { ...raw, source: 'scraped' })
+      } else {
+        console.log(`[${name}] ⚠️ 未在该平台上架`)
       }
     } catch (err) {
       console.warn(`[${name}] 跳过: ${err.message}`)
@@ -68,29 +74,9 @@ app.get('/api/hotels/prices', async (req, res) => {
   const results = await Promise.all(platformTasks)
   const platforms = results.filter(Boolean)
 
-  console.log(`📊 共获取 ${platforms.length}/4 平台数据`)
+  console.log(`📊 共 ${platforms.length}/4 平台找到该酒店`)
 
-  // 3. 如果所有平台都失败，降级到 mock
-  if (platforms.length === 0) {
-    console.log(`⚠️ 无平台返回数据，降级到 mock`)
-    const mockData = getMockPrices(hotelName)
-    if (mockData) {
-      return res.json(mockData)
-    }
-    return res.json({
-      hotelName,
-      updatedAt: new Date().toISOString(),
-      fromCache: false,
-      isMock: false,
-      platforms: [],
-      error: '所有平台爬取失败，且无 mock 数据'
-    })
-  }
-
-  // 4. 检查是否至少有一个平台抓到了有效价格
-  const hasValidPrice = platforms.some(p => p.minPrice > 0)
-
-  // 5. 写入缓存并返回（仅当有有效价格或所有平台都尝试过时缓存）
+  // 3. 构建响应（仅包含实际找到的平台）
   const responseData = {
     hotelName,
     updatedAt: new Date().toISOString(),
@@ -99,12 +85,14 @@ app.get('/api/hotels/prices', async (req, res) => {
     platforms
   }
 
-  if (hasValidPrice || platforms.length >= 3) {
-    // 有有效价格或大部分平台都返回了 → 缓存
+  // 4. 缓存（有有效价格时缓存，避免缓存空结果）
+  const hasValidPrice = platforms.some(p => p.minPrice > 0)
+  if (hasValidPrice) {
     cache.set(hotelName, city, responseData)
   } else {
-    console.log(`⚠️ 无有效价格且仅 ${platforms.length} 平台返回，不缓存（允许重试）`)
+    console.log(`⚠️ 所有平台均未找到该酒店，不缓存（允许重试）`)
   }
+
   res.json(responseData)
 })
 
@@ -112,7 +100,7 @@ app.get('/api/hotels/prices', async (req, res) => {
  * POST /api/hotels/batch
  * 批量查询酒店价格
  *
- * Body: { hotels: [{ name: "香格里拉", city: "深圳" }, ...] }
+ * Body: { hotels: [{ name: "香格里拉", city: "深圳", address: "福田区..." }, ...] }
  */
 app.post('/api/hotels/batch', async (req, res) => {
   const { hotels } = req.body
@@ -136,10 +124,12 @@ app.post('/api/hotels/batch', async (req, res) => {
       continue
     }
 
+    const address = h.address || ''
+
     const platformTasks = Object.entries(scrapers).map(async ([name, scraper]) => {
       try {
-        const raw = await scraper.scrapeWithRetry(h.name, h.city || '')
-        if (raw) return normalize(name, { ...raw, source: 'scraped' })
+        const raw = await scraper.scrapeWithRetry(h.name, h.city || '', address)
+        if (raw && raw.minPrice > 0) return normalize(name, { ...raw, source: 'scraped' })
       } catch (err) { /* skip */ }
       return null
     })
@@ -147,18 +137,16 @@ app.post('/api/hotels/batch', async (req, res) => {
     const platformResults = await Promise.all(platformTasks)
     const platforms = platformResults.filter(Boolean)
 
-    if (platforms.length === 0) {
-      const mock = getMockPrices(h.name)
-      results.push(mock || { hotelName: h.name, platforms: [] })
-    } else {
-      const data = {
-        hotelName: h.name,
-        updatedAt: new Date().toISOString(),
-        platforms
-      }
-      cache.set(h.name, h.city || '', data)
-      results.push(data)
+    const data = {
+      hotelName: h.name,
+      updatedAt: new Date().toISOString(),
+      platforms
     }
+
+    if (platforms.length > 0) {
+      cache.set(h.name, h.city || '', data)
+    }
+    results.push(data)
   }
 
   res.json({ results })
@@ -201,5 +189,5 @@ process.on('SIGINT', async () => {
 app.listen(config.port, () => {
   console.log(`\n🏨 酒店价格爬虫服务已启动: http://localhost:${config.port}`)
   console.log(`  健康检查: http://localhost:${config.port}/api/health`)
-  console.log(`  价格查询: http://localhost:${config.port}/api/hotels/prices?hotelName=深圳福田香格里拉&city=深圳\n`)
+  console.log(`  价格查询: http://localhost:${config.port}/api/hotels/prices?hotelName=深圳福田香格里拉&city=深圳&address=福田区\n`)
 })
