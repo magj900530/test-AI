@@ -107,8 +107,8 @@ class MeituanScraper extends BaseScraper {
         // 按综合匹配分降序
         candidates.sort((a, b) => b.combinedScore - a.combinedScore)
 
-        // 只取匹配度 ≥ 0.5 的（名称+地址双匹配，更严谨）
-        const matched = candidates.filter(p => p.combinedScore >= 0.5)
+        // 只取匹配度 ≥ 0.35 的
+        const matched = candidates.filter(p => p.combinedScore >= 0.35)
 
         if (matched.length > 0) {
           // 取匹配度最高的前 3 个中的最低价
@@ -198,8 +198,8 @@ class MeituanScraper extends BaseScraper {
             ? nameScore * 0.6 + addrScore * 0.4
             : nameScore
 
-          // JSON 数据匹配阈值稍低（结构化数据更可靠）
-          if (combinedScore >= 0.4) {
+          // JSON 数据匹配阈值稍低
+          if (combinedScore >= 0.3) {
             const ratingVal = this._findValue(obj, /rating|score|comment/i)
             results.push({
               name: nameVal,

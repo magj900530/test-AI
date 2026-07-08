@@ -106,7 +106,7 @@ class XiechengScraper extends BaseScraper {
         })
 
         candidates.sort((a, b) => b.combinedScore - a.combinedScore)
-        const matched = candidates.filter(p => p.combinedScore >= 0.5)
+        const matched = candidates.filter(p => p.combinedScore >= 0.35)
 
         if (matched.length > 0) {
           const best = matched.slice(0, 5)
@@ -191,7 +191,7 @@ class XiechengScraper extends BaseScraper {
             ? nameScore * 0.6 + addrScore * 0.4
             : nameScore
 
-          if (combinedScore >= 0.4) {
+          if (combinedScore >= 0.3) {
             results.push({
               name: nameVal,
               minPrice: price,

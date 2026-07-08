@@ -16,7 +16,7 @@ function normalize(platform, rawData) {
   return {
     platform: template.platform,
     platformName: template.platformName,
-    minPrice: rawData.minPrice || 0,
+    minPrice: rawData.minPrice != null ? rawData.minPrice : 0,
     roomTypes: (rawData.roomTypes || []).map(room => ({
       name: room.name || '标准房',
       price: room.price || rawData.minPrice || 0,

@@ -99,7 +99,7 @@ class QunarScraper extends BaseScraper {
         })
 
         candidates.sort((a, b) => b.combinedScore - a.combinedScore)
-        const matched = candidates.filter(p => p.combinedScore >= 0.5)
+        const matched = candidates.filter(p => p.combinedScore >= 0.35)
 
         if (matched.length > 0) {
           matched.sort((a, b) => a.price - b.price)
@@ -156,7 +156,7 @@ class QunarScraper extends BaseScraper {
             ? address.split('').filter(c => av.includes(c)).length / Math.max(address.length, 1)
             : 0
           const combinedScore = address ? nameScore * 0.6 + addrScore * 0.4 : nameScore
-          if (combinedScore >= 0.4) {
+          if (combinedScore >= 0.3) {
             results.push({ name: nv, minPrice: price, rating: 0, reviewCount: 0, jumpUrl: this._fv(obj, /url|link|href/i) || '', matchScore: combinedScore })
           }
         }
