@@ -63,6 +63,8 @@
 <script setup>
 import { computed } from 'vue'
 import { useHotelStore } from '@/stores/hotel.js'
+import { PLATFORM_KEY_MAP } from '@/constants/platforms.js'
+import { formatDistance } from '@/utils/amap.js'
 
 const props = defineProps({
   hotel: { type: Object, required: true }
@@ -85,18 +87,7 @@ const sortedPlatforms = computed(() => {
 })
 
 function getPlatformClass(platform) {
-  const map = {
-    meituan: 'chip-meituan',
-    xiecheng: 'chip-xiecheng',
-    qunar: 'chip-qunar',
-    feizhu: 'chip-feizhu'
-  }
-  return map[platform] || ''
-}
-
-function formatDistance(km) {
-  if (km < 1) return `${Math.round(km * 1000)}m`
-  return `${km.toFixed(1)}km`
+  return PLATFORM_KEY_MAP[platform]?.cssClass || ''
 }
 
 function goDetail() {
@@ -120,7 +111,9 @@ function openPlatform(p) {
   })
   // #endif
   // #ifdef H5
-  window.open(p.jumpUrl, '_blank')
+  if (typeof window !== 'undefined') {
+    window.open(p.jumpUrl, '_blank')
+  }
   // #endif
 }
 

@@ -6,40 +6,29 @@
  * 未抓取到的平台 minPrice 为 null，UI 展示"暂无"。
  */
 
-const DEFAULT_COVER = '/static/images/hotel-default.jpg'
+import { PLATFORMS, PLATFORM_JUMP_URLS } from '@/constants/platforms.js'
 
-const PLATFORM_TEMPLATES = [
-  { platform: 'meituan', platformName: '美团' },
-  { platform: 'xiecheng', platformName: '携程' },
-  { platform: 'qunar', platformName: '去哪儿' },
-  { platform: 'feizhu', platformName: '飞猪' }
-]
+const DEFAULT_COVER = '/static/images/hotel-default.jpg'
 
 /**
  * 生成平台搜索/跳转链接
  */
 function buildJumpUrl(platform, hotelName) {
-  const q = encodeURIComponent(hotelName)
-  const urls = {
-    meituan: `https://i.meituan.com/hotel/list?keyword=${q}`,
-    xiecheng: `https://m.ctrip.com/html5/hotel/search?keyword=${q}`,
-    qunar: `https://touch.qunar.com/hotel/search?keyword=${q}`,
-    feizhu: `https://h5.m.taobao.com/trip/hotel/search?keyword=${q}`
-  }
-  return urls[platform] || ''
+  const fn = PLATFORM_JUMP_URLS[platform]
+  return fn ? fn(encodeURIComponent(hotelName)) : ''
 }
 
 /**
  * 从高德 POI 类型码推断星级
- * 高德 POI 分类: 100101=五星级, 100102=四星级, 100103=三星级, 100104=二星级及以下
+ * 高德 POI 分类: 100101=五星级→5星, 100102=四星级→4星, 100103=三星级→3星
  */
 function parseStarLevel(typeCode) {
   if (!typeCode) return 3
   const code = String(typeCode)
-  if (code.includes('100101')) return 6
-  if (code.includes('100102')) return 5
-  if (code.includes('100103')) return 4
-  if (code.includes('100104')) return 3
+  if (code.includes('100101')) return 5
+  if (code.includes('100102')) return 4
+  if (code.includes('100103')) return 3
+  if (code.includes('100104')) return 2
   if (code.includes('100105')) return 2
   return 3
 }
@@ -49,7 +38,7 @@ function parseStarLevel(typeCode) {
  * 所有平台 minPrice 初始为 null，等待后端爬虫回填真实价格
  */
 function createPlatformPlaceholders(hotelName) {
-  return PLATFORM_TEMPLATES.map((tpl) => ({
+  return PLATFORMS.map((tpl) => ({
     ...tpl,
     minPrice: null,
     rating: 0,

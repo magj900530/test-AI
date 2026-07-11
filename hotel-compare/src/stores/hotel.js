@@ -27,6 +27,8 @@ export const useHotelStore = defineStore('hotel', () => {
   const priceCache = ref({})          // { hotelId: { platforms, updatedAt, timestamp } }
   const isPriceLoading = ref(false)
 
+  const _searchToken = ref(0)  // 竞态控制：每次新搜索递增，旧请求结果被丢弃
+
   // ====== 计算属性 ======
   const sortedHotels = computed(() => {
     return sortHotels(filteredHotels.value, sortType.value)
@@ -89,33 +91,35 @@ export const useHotelStore = defineStore('hotel', () => {
    */
   async function searchNearbyHotels(lat, lng, radiusKm = 5) {
     isLoading.value = true
+    const token = ++_searchToken.value  // 递增版本号，旧请求的结果将被忽略
     try {
-      console.log(`[酒店] 搜索周边酒店: (${lat}, ${lng}) ${radiusKm}km`)
       const pois = await searchAround(lat, lng, radiusKm * 1000)
-      console.log(`[酒店] 高德返回 ${pois.length} 条酒店`)
+
+      // 竞态保护：如果新搜索已发起，丢弃本次结果
+      if (token !== _searchToken.value) return
 
       if (pois.length > 0) {
         const hotels = amapPOIsToHotels(pois)
         allHotels.value = hotels.map(computeHotelFields)
-        console.log(`[酒店] 已加载 ${allHotels.value.length} 家酒店（价格待后端抓取），开始拉取实时价格...`)
         fetchAllRealPrices()
       } else {
-        console.warn('[酒店] 高德无结果，降级到本地数据')
         allHotels.value = hotelData.map(computeHotelFields)
         uni.showToast({ title: '暂无周边酒店，显示示例数据', icon: 'none', duration: 2000 })
       }
     } catch (e) {
-      console.error('[酒店] 搜索失败，降级到本地数据:', e.message)
+      if (token !== _searchToken.value) return
       allHotels.value = hotelData.map(computeHotelFields)
       uni.showToast({ title: '网络异常，显示示例数据', icon: 'none', duration: 2000 })
     } finally {
-      isLoading.value = false
-      filterByLocation()
+      if (token === _searchToken.value) {
+        isLoading.value = false
+        filterByLocation()
+      }
     }
   }
 
   /**
-   * 根据位置和半径筛选酒店
+   * 根据位置和半径筛选酒店（单次遍历，复用缓存距离）
    */
   function filterByLocation() {
     const locStore = useLocationStore()
@@ -124,13 +128,12 @@ export const useHotelStore = defineStore('hotel', () => {
       return
     }
 
-    const { lat, lng } = locStore.searchCenter
-    filteredHotels.value = allHotels.value
-      .map(h => {
-        const distance = locStore.getDistance(h.lat, h.lng)
-        return { ...h, distance }
-      })
-      .filter(h => h.distance <= locStore.radius)
+    const { lat, lng, radius } = locStore.searchCenter
+    filteredHotels.value = allHotels.value.reduce((result, h) => {
+      const distance = h.distance != null ? h.distance : locStore.getDistance(h.lat, h.lng)
+      if (distance <= radius) result.push({ ...h, distance })
+      return result
+    }, [])
   }
 
   function setSortType(type) {
@@ -171,115 +174,102 @@ export const useHotelStore = defineStore('hotel', () => {
   }
 
   /**
+   * 检查价格缓存是否有效（5 分钟内不重复请求）
+   */
+  function checkPriceCache(hotelId) {
+    const cached = priceCache.value[hotelId]
+    return (cached && Date.now() - cached.timestamp < 5 * 60 * 1000) ? cached : null
+  }
+
+  /**
+   * 将后端平台数据合并到酒店平台的占位中
+   */
+  function mergePlatformPrices(hotel, backendPlatforms) {
+    const backendMap = {}
+    backendPlatforms.forEach(p => { backendMap[p.platform] = p })
+
+    return hotel.platforms.map(existing => {
+      const backendData = backendMap[existing.platform]
+      if (backendData && backendData.minPrice > 0) {
+        return { ...existing, ...backendData, _pending: false, _source: 'scraped', _notFound: false }
+      }
+      return { ...existing, minPrice: null, _pending: false, _notFound: true }
+    })
+  }
+
+  /**
    * 从后端刷新单个酒店的实时爬虫价格
-   *
-   * 合并策略：
-   * - 后端返回的平台数据 → 更新对应平台（_pending: false, _source: 'scraped'）
-   * - 后端未返回的平台 → 标记为未上架（_pending: false, _notFound: true）
-   * - 每个酒店 5 分钟内不重复请求
-   *
-   * @param {string} hotelId 酒店 ID
-   * @returns 更新后的 platforms 数组
    */
   async function refreshPrices(hotelId) {
     const hotel = allHotels.value.find(h => h.id === hotelId)
     if (!hotel) return null
 
-    // 检查缓存（5 分钟内不重复请求）
-    const cached = priceCache.value[hotelId]
-    if (cached && Date.now() - cached.timestamp < 5 * 60 * 1000) {
-      console.log(`[价格] 使用缓存: ${hotel.name}`)
-      return cached.platforms
-    }
+    const cached = checkPriceCache(hotelId)
+    if (cached) return cached.platforms
 
     try {
       const city = hotel.address ? hotel.address.substring(0, 2) : ''
       const address = hotel.address || ''
-
       const result = await getPriceCompare(hotel.name, city, address)
-      console.log(`[价格] 后端返回: ${hotel.name}`, JSON.stringify(result?.platforms?.map(p => `${p.platform}:¥${p.minPrice}`)))
 
-      if (result && result.platforms) {
-        // 构建后端平台数据映射 { meituan: {...}, xiecheng: {...}, ... }
-        const backendMap = {}
-        result.platforms.forEach(p => {
-          backendMap[p.platform] = p
-        })
-
-        // 合并到现有平台占位中
+      if (result?.platforms) {
         const hotelIndex = allHotels.value.findIndex(h => h.id === hotelId)
         if (hotelIndex > -1) {
-          const currentHotel = allHotels.value[hotelIndex]
-          const updatedPlatforms = currentHotel.platforms.map(existing => {
-            const backendData = backendMap[existing.platform]
-            if (backendData && backendData.minPrice > 0) {
-              // 后端抓取到了该平台价格
-              return {
-                ...existing,
-                ...backendData,
-                _pending: false,
-                _source: 'scraped',
-                _notFound: false
-              }
-            }
-            // 后端未抓取到该平台 → 标记为未上架
-            return {
-              ...existing,
-              minPrice: null,
-              _pending: false,
-              _notFound: true
-            }
-          })
-
-          allHotels.value[hotelIndex] = computeHotelFields({
-            ...currentHotel,
-            platforms: updatedPlatforms
-          })
-
-          const foundCount = updatedPlatforms.filter(p => p.minPrice != null && p.minPrice > 0).length
-          console.log(`[价格] ✅ ${hotel.name}: ${foundCount}/4 平台有价格`)
+          const updatedPlatforms = mergePlatformPrices(allHotels.value[hotelIndex], result.platforms)
+          allHotels.value[hotelIndex] = computeHotelFields({ ...allHotels.value[hotelIndex], platforms: updatedPlatforms })
         }
-
-        // 写入缓存
-        priceCache.value[hotelId] = {
-          platforms: result.platforms,
-          timestamp: Date.now()
-        }
-
+        priceCache.value[hotelId] = { platforms: result.platforms, timestamp: Date.now() }
         return result.platforms
       }
     } catch (err) {
-      console.error(`[价格] 请求失败: ${hotel.name}`, err.message)
-      // 缓存失败状态避免重复请求
-      priceCache.value[hotelId] = {
-        platforms: hotel.platforms,
-        timestamp: Date.now()
-      }
+      priceCache.value[hotelId] = { platforms: hotel.platforms, timestamp: Date.now() }
     }
-
     return hotel.platforms
   }
 
   /**
-   * 异步拉取所有酒店的实时爬虫价格
+   * 并发池：限制同时进行的异步任务数
+   * @param {number} concurrency 最大并发数
+   * @param {Array} items 任务列表
+   * @param {Function} fn 每个任务的处理函数 (item) => Promise
+   */
+  async function runWithConcurrency(concurrency, items, fn) {
+    const results = []
+    const queue = [...items]
+
+    async function worker() {
+      while (queue.length > 0) {
+        const item = queue.shift()
+        try {
+          results.push(await fn(item))
+        } catch (_) { /* 单个失败不影响其他 */ }
+      }
+    }
+
+    await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, () => worker()))
+    return results
+  }
+
+  /**
+   * 异步拉取所有酒店的实时爬虫价格（并发池，最多 5 个同时请求）
    */
   async function fetchAllRealPrices() {
     const hotels = [...allHotels.value]
-    let fetched = 0
     let updated = 0
 
-    for (const hotel of hotels) {
+    await runWithConcurrency(5, hotels, async (hotel) => {
       try {
         const platforms = await refreshPrices(hotel.id)
         if (platforms && platforms.some(p => p.minPrice > 0)) {
           updated++
         }
-        fetched++
+        return true
       } catch (e) {
-        // 单个酒店失败不影响其他
+        return false
       }
-    }
+    })
 
+    const fetched = hotels.length
     console.log(`[价格] 拉取完成: ${fetched}/${hotels.length} 家请求, ${updated} 家获得实时价格`)
     if (updated > 0) {
       filterByLocation()
@@ -292,7 +282,7 @@ export const useHotelStore = defineStore('hotel', () => {
   function getPriceSource(hotelId) {
     const cached = priceCache.value[hotelId]
     if (!cached) return { source: 'pending', updatedAt: null }
-    return { source: 'scraped', updatedAt: null }
+    return { source: 'scraped', updatedAt: cached.timestamp }
   }
 
   return {

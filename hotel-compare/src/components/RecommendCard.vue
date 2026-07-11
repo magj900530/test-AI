@@ -42,6 +42,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { formatDistance } from '@/utils/amap.js'
 
 const props = defineProps({
   item: { type: Object, required: true },
@@ -53,16 +54,6 @@ const topPlatforms = computed(() => {
     .sort((a, b) => a.minPrice - b.minPrice)
     .slice(0, 3)
 })
-
-function formatDistance(km) {
-  if (km < 1) return `${Math.round(km * 1000)}m`
-  return `${km.toFixed(1)}km`
-}
-
-function getShortName(name) {
-  const map = { '美团': '美团', '携程': '携程', '去哪儿': '去哪儿', '飞猪': '飞猪' }
-  return map[name] || name
-}
 
 function goDetail() {
   uni.navigateTo({

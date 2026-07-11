@@ -70,6 +70,7 @@ import { onLoad } from '@dcloudio/uni-app'
 import { useHotelStore } from '@/stores/hotel.js'
 import { usePreferenceStore } from '@/stores/preference.js'
 import PriceCompare from '@/components/PriceCompare.vue'
+import { formatDistance } from '@/utils/amap.js'
 
 const hotelStore = useHotelStore()
 const prefStore = usePreferenceStore()
@@ -119,12 +120,6 @@ function generatePriceHistory() {
       price: Math.round(basePrice * (1 + variance))
     }
   })
-}
-
-function formatDistance(km) {
-  if (!km && km !== 0) return ''
-  if (km < 1) return `${Math.round(km * 1000)}m`
-  return `${km.toFixed(1)}km`
 }
 
 function goBack() {

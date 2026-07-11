@@ -3,10 +3,11 @@
  * 提供 POI 搜索、逆地理编码、距离计算等功能
  */
 
-// 高德 Web API Key（需替换为用户申请的实际 Key）
-// ⚠️ 重要：必须使用「Web服务」类型的 Key，不能使用 JS API / Android / iOS 类型的 Key
+// 高德 Web API Key（从环境变量读取，不写死在代码中）
+// ⚠️ 重要：必须使用「Web服务」类型的 Key
 // 申请地址：https://console.amap.com/dev/key/app
-const AMAP_KEY = '2a6d946473e96ae2753bd0319bc08600'
+// 本地开发：复制 .env.example 为 .env，填入你的 Key
+const AMAP_KEY = import.meta.env.VITE_AMAP_KEY || ''
 const AMAP_BASE = 'https://restapi.amap.com/v3'
 
 // 记录是否已提示过 Key 配置问题（避免重复弹 toast）

@@ -166,12 +166,24 @@ function onMarkerTap(hotel) {
 }
 
 // ====== 拖拽地图与列表分界 ======
+function throttle(fn, ms = 16) {
+  let pending = false
+  return function (...args) {
+    if (pending) return
+    pending = true
+    requestAnimationFrame(() => {
+      fn.apply(this, args)
+      pending = false
+    })
+  }
+}
+
 let dragStartY = 0
-function onDragMove(e) {
+const onDragMove = throttle(function (e) {
   const dy = e.touches[0].clientY - dragStartY
   mapHeight.value = Math.max(200, Math.min(600, mapHeight.value + dy))
   dragStartY = e.touches[0].clientY
-}
+})
 
 function onDragEnd() {
   // 吸附到 200, 350, 500
