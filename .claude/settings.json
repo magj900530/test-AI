@@ -1,0 +1,190 @@
+{
+  "env": {
+    "ANTHROPIC_AUTH_TOKEN": "sk-4fc66c27f01f4271b67154a043be85af",
+    "ANTHROPIC_BASE_URL": "https://api.deepseek.com/anthropic",
+    "ANTHROPIC_MODEL": "deepseek-v4-pro",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "deepseek-v4-flash",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "deepseek-v4-pro",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "deepseek-v4-pro",
+    "API_TIMEOUT_MS": "600000",
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "40",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK": "1",
+    "CLAUDE_CODE_EFFORT_LEVEL": "max",
+    "CLAUDE_CODE_SUBAGENT_MODEL": "deepseek-v4-flash"
+  },
+  "permissions": {
+    "defaultMode": "bypassPermissions",
+    "disableAutoMode": "disable",
+    "allow": [
+      "Read(**/*)",
+      "Edit(**/*)",
+      "Write(**/*)",
+      "Glob(**/*)",
+      "Grep(**/*)",
+      "Bash(npm *)",
+      "Bash(git *)",
+      "Bash(curl *)",
+      "Bash(scp *)",
+      "Bash(ssh *)",
+      "Bash(ls *)",
+      "Bash(cd *)",
+      "Bash(echo *)",
+      "Bash(node *)",
+      "Bash(mkdir *)",
+      "Bash(cat *)",
+      "Bash(sed *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(pwd *)",
+      "Bash(wc *)",
+      "Bash(node -e \"process.stdin.on\\('data',d=>{const j=JSON.parse\\(d\\);const p=j.platforms[0];console.log\\('主图:',\\(p.imageUrl||'无'\\).substring\\(0,80\\)\\);console.log\\('相册:',\\(p.gallery||[]\\).length+'张'\\);}\\)\")",
+      "Read(//c/Program Files \\\\\\(x86\\\\\\)/Tencent/微信web开发者工具/**)",
+      "Read(//c/Program Files/Tencent/**)",
+      "Bash(\"/c/Program Files \\(x86\\)/Tencent/微信web开发者工具/cli.bat\" --help)",
+      "Bash(\"/c/Program Files \\(x86\\)/Tencent/微信web开发者工具/cli.bat\" -h)",
+      "Bash(\"/c/Program Files \\(x86\\)/Tencent/微信web开发者工具/cli.bat\" upload --help)",
+      "Bash('/c/Program Files \\(x86\\)/Tencent/微信web开发者工具/cli.bat' upload --project C:/Users/47150/hotel-compare/dist/build/mp-weixin --version 1.0.1 --desc 携程真实价格+图片+房型列表 --port 3333 --lang zh)",
+      "Bash(taskkill //F //IM \"微信开发者工具.exe\")",
+      "Bash(taskkill //F //IM \"wechatdevtools.exe\")",
+      "Bash(netstat -ano)",
+      "Bash(tasklist)",
+      "Bash(cmd //c \"tasklist | findstr /i wechat\")",
+      "Bash('/c/Program Files \\(x86\\)/Tencent/微信web开发者工具/cli.bat' open --project C:/Users/47150/hotel-compare/dist/build/mp-weixin --lang zh)",
+      "Bash(cmd //c \"tasklist | findstr /i chrom\")",
+      "Bash(HEADLESS=false timeout 60 node -e ' *)",
+      "Bash(cmd //c \"rmdir /s /q \\\\\"C:\\\\Users\\\\47150\\\\hotel-compare\\\\hotel-scraper-server\\\\.browser-sessions\\\\携程-profile\\\\\"\")",
+      "Bash(npx playwright *)",
+      "Bash('/c/Program Files \\(x86\\)/Tencent/微信web开发者工具/cli.bat' upload --project C:/Users/47150/hotel-compare/dist/build/mp-weixin --version 1.0.2 --desc 携程+美团真实价格 --port 3333 --lang zh)",
+      "Bash(taskkill //F //IM wechatdevtools.exe)",
+      "Bash('/c/Program Files \\(x86\\)/Tencent/微信web开发者工具/cli.bat' open --project C:/Users/47150/hotel-compare/dist/build/mp-weixin --port 3333 --lang zh)",
+      "Bash(\"/c/Program Files \\(x86\\)/Tencent/微信web开发者工具/微信开发者工具.exe\")",
+      "Bash(Restart pm2 *)",
+      "Bash(grep -oP '>[^<]{2,80}<' C:/Users/47150/hotel-compare/hotel-scraper-server/.debug-snapshots/美团-meituan-list-latest.html)",
+      "Bash(python3 -c ' *)",
+      "Read(//d/crossborder-bot/src/admin/**)",
+      "Bash(npx kill-port *)",
+      "Bash(cd D:/crossborder-bot && node src/admin/server.js &)",
+      "Read(//d/crossborder-bot/**)",
+      "Bash(read fn *)",
+      "Bash(grep -q 'function __TRACKED_VAR__\\\\b' D:/crossborder-bot/src/admin/views/admin.html)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); [print\\(f'  [{a[\\\\\"severity_label\\\\\"]}] {a[\\\\\"message\\\\\"][:60]}'\\) for a in d['data']]\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f'  {d[\\\\\"total\\\\\"]} SKUs, 前2: {[r[\\\\\"sku\\\\\"] for r in d[\\\\\"data\\\\\"]]}'\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f'  {d[\\\\\"total\\\\\"]} 客户'\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f'  {d[\\\\\"total\\\\\"]} 订单'\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f'  {d[\\\\\"total\\\\\"]} 报价'\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f'  {d[\\\\\"total\\\\\"]} 工单'\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f'  {d[\\\\\"total\\\\\"]} 发货'\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f'  {d[\\\\\"total\\\\\"]} 应收'\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f'  {d[\\\\\"total\\\\\"]} SKUs'\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); [print\\(f' id={a[\\\\\"id\\\\\"]} msg={a[\\\\\"message\\\\\"][:20]} resolved_by={a[\\\\\"resolved_by\\\\\"]}'\\) for a in d['data'][:3]]\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); c=d.get\\('customer',{}\\); print\\(f' contact={c.get\\(\\\\\"contact_person\\\\\"\\)} industry={c.get\\(\\\\\"industry\\\\\"\\)}'\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f' total={d.get\\(\\\\\"total\\\\\"\\)} first={d[\\\\\"data\\\\\"][0][\\\\\"subject\\\\\"] if d.get\\(\\\\\"data\\\\\"\\) else \\\\\"none\\\\\"}'\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f' by_status={d[\\\\\"orders\\\\\"][\\\\\"by_status\\\\\"]}'\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); [print\\(f' id={a[\\\\\"id\\\\\"]} msg={a[\\\\\"message\\\\\"]}'\\) for a in d['data']]\")",
+      "Bash(taskkill //F //IM node.exe)",
+      "Read(//d/rag-project/**)",
+      "Bash(./venv/Scripts/python.exe -c \"import scipy; print\\('scipy ok'\\)\")",
+      "Bash(./venv/Scripts/python.exe -c \"from sentence_transformers import SentenceTransformer; print\\('OK'\\)\")",
+      "Bash(winget search *)",
+      "Bash(winget install *)",
+      "Bash(./venv/Scripts/pip.exe install *)",
+      "Bash(HF_ENDPOINT=https://hf-mirror.com HF_HOME=D:/huggingface_cache cd D:/rag-project)",
+      "Bash(./venv/Scripts/python.exe run.py)",
+      "Bash(HF_ENDPOINT=https://hf-mirror.com HF_HOME=D:/huggingface_cache ./venv/Scripts/python.exe -c ' *)",
+      "Bash(cmd //c \"rmdir /s /q D:\\\\rag-project\\\\venv_old\")",
+      "Read(//d/AI项目/PPT模版/**)",
+      "Bash(mv \"D:/AI项目/PPT模版/03-暗黑计算科技风.potx.bak\" \"D:/AI项目/PPT模版/01-科技感/03-暗黑计算科技风.potx\")",
+      "Bash(python \"C:\\\\Users\\\\47150\\\\.claude\\\\scripts\\\\index-ppt-templates.py\")",
+      "Bash(rm -f \"D:/AI项目/PPT模版/thumbnails/\"*.jpg 2>/dev/null; python \"C:\\\\Users\\\\47150\\\\.claude\\\\scripts\\\\index-ppt-templates.py\")",
+      "Bash(python \"C:\\\\Users\\\\47150\\\\.claude\\\\skills\\\\pptx\\\\scripts\\\\thumbnail.py\" \"C:/Users/47150/Desktop/hotel-weekly-report.pptx\" \"C:/Users/47150/test-output-thumb\" --cols 5)"
+    ],
+    "deny": [
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(rm -rf:*)",
+      "Bash(chmod 777:*)",
+      "Bash(chmod -R 777:*)",
+      "Bash(curl *|*sh*)",
+      "Bash(wget *|*sh*)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\47150\\hotel-compare\\src\\pages\\search",
+      "c:\\Users\\47150\\hotel-compare\\src\\pages\\index",
+      "c:\\Users\\47150\\hotel-compare\\src\\stores",
+      "c:\\Users\\47150\\hotel-compare\\src\\components",
+      "c:\\Users\\47150\\hotel-compare\\scripts",
+      "c:\\Users\\47150\\hotel-compare\\src\\pages\\detail",
+      "c:\\Users\\47150\\hotel-compare\\src\\utils",
+      "c:\\Users\\47150\\hotel-compare\\src\\data",
+      "C:\\Users\\47150\\hotel-compare\\hotel-scraper-server",
+      "D:\\crossborder-bot\\src\\routes",
+      "D:\\crossborder-bot\\src\\admin\\views",
+      "D:\\rag-project",
+      "D:\\AI项目\\PPT模版\\thumbnails"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"C:\\Users\\47150\\.claude\\hooks\\pre-tool-check.py\""
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"C:\\Users\\47150\\.claude\\hooks\\pre-tool-check.py\""
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "",
+        "hooks": [{
+          "type": "command",
+          "command": "python \"C:\\Users\\47150\\.claude\\hooks\\pre-compact-check.py\""
+        }]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|Write|Edit",
+        "hooks": [{
+          "type": "command",
+          "command": "python \"C:\\Users\\47150\\.claude\\hooks\\post-tool-log.py\""
+        }]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [{
+          "type": "command",
+          "command": "python \"C:\\Users\\47150\\.claude\\hooks\\session-start.py\""
+        }]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"C:\\Users\\47150\\.claude\\hooks\\auto-save.py\""
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "claude-mem@thedotmack": false
+  },
+  "hasCompletedOnboarding": true,
+  "effortLevel": "xhigh"
+}
