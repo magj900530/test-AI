@@ -77,12 +77,20 @@ def get_status():
         except:
             pass
 
-    # cc-weixin 进程
+    # cc-weixin 进程检测 — 通过 PID 文件
     ccwx_running = False
+    pid_file = os.path.join(STATE_DIR, "cc-weixin.pid")
     try:
-        result = subprocess.run(["tasklist", "/fi", "imagename eq node.exe"],
-                                capture_output=True, text=True, timeout=5)
-        ccwx_running = "cc-weixin" in result.stdout
+        if os.path.exists(pid_file):
+            with open(pid_file) as f:
+                pid = int(f.read().strip())
+            if pid > 0:
+                # 检查该 PID 是否仍在运行
+                result = subprocess.run(
+                    ["tasklist", "/fi", f"PID eq {pid}"],
+                    capture_output=True, text=True, timeout=5
+                )
+                ccwx_running = "node.exe" in result.stdout
     except:
         pass
 
