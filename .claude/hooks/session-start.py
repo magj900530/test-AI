@@ -1,9 +1,28 @@
 #!/usr/bin/env python3
-"""SessionStart Hook：根据模式注入系统提示词"""
+"""SessionStart Hook：更新活跃项目 + 根据模式注入系统提示词"""
 import json, sys, os
 
 sys.path.insert(0, os.path.join(os.path.expanduser("~"), ".claude", "scripts"))
 from state_manager import get_mode
+
+STATE_DIR = os.path.expanduser("~/.claude/state")
+
+# 读取 hook 输入
+try:
+    input_data = json.loads(sys.stdin.buffer.read().decode("utf-8"))
+except:
+    input_data = {}
+
+# 从 hook 输入提取 cwd，自动更新活跃项目
+cwd = input_data.get("cwd", "") or input_data.get("working_directory", "")
+if cwd:
+    active_file = os.path.join(STATE_DIR, "active_project.json")
+    try:
+        with open(active_file, "w", encoding="utf-8") as f:
+            json.dump({"cwd": cwd, "set_at": __import__("time").time()}, f)
+        print(f"[SessionStart] 活跃项目已更新: {cwd}", file=sys.stderr)
+    except Exception as e:
+        print(f"[SessionStart] 更新活跃项目失败: {e}", file=sys.stderr)
 
 mode = get_mode()
 

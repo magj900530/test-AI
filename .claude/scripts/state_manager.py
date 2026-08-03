@@ -21,33 +21,17 @@ def set_mode(mode):
 
 # ====== 项目检测 ======
 def get_active_project():
-    """检测前台 VS Code 窗口标题，提取项目名"""
+    """读取 cc-weixin 写入的 active_project.json，提取目录名"""
     try:
-        import ctypes
-        from ctypes import wintypes
-        user32 = ctypes.windll.user32
-        kernel32 = ctypes.windll.kernel32
-
-        hwnd = user32.GetForegroundWindow()
-        length = user32.GetWindowTextLengthW(hwnd)
-        buf = ctypes.create_unicode_buffer(length + 1)
-        user32.GetWindowTextW(hwnd, buf, length + 1)
-        title = buf.value
-
-        if "Visual Studio Code" in title:
-            # "file.ts — project-name - Visual Studio Code"
-            parts = title.split(" — ")
-            if len(parts) >= 2:
-                proj = parts[1].split(" - Visual Studio Code")[0].strip()
-                return proj
-    except Exception:
+        apf = os.path.join(STATE_DIR, "active_project.json")
+        if os.path.exists(apf):
+            with open(apf, encoding="utf-8") as f:
+                cwd = json.load(f).get("cwd", "")
+                if cwd:
+                    return os.path.basename(cwd)
+    except:
         pass
-
-    # Fallback: check common project dirs
-    for d in ["D:/AI项目/hotel-compare", "D:/AI项目/rag-project", "D:/AI项目/IFTFS"]:
-        if os.path.isdir(d):
-            return os.path.basename(d)
-    return None
+    return "未知"
 
 # ====== 密钥脱敏 ======
 SENSITIVE_PATTERNS = [

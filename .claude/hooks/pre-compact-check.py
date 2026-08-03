@@ -7,7 +7,7 @@ os.makedirs(STATE_DIR, exist_ok=True)
 
 # 读取会话上下文信息
 try:
-    input_data = json.loads(sys.stdin.read())
+    input_data = json.loads(sys.stdin.buffer.read().decode("utf-8"))
     ctx_pct = input_data.get("context_usage", "?")
 except:
     ctx_pct = "?"

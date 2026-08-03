@@ -6,7 +6,7 @@ import json, sys, os, time, re
 STATE_DIR = os.path.expanduser("~/.claude/state")
 os.makedirs(STATE_DIR, exist_ok=True)
 
-input_data = json.loads(sys.stdin.read())
+input_data = json.loads(sys.stdin.buffer.read().decode("utf-8"))
 tool_name = input_data.get("tool_name", "")
 tool_input = input_data.get("tool_input", {})
 command = tool_input.get("command", "") or str(tool_input)
@@ -26,7 +26,7 @@ DANGEROUS = [
     (r"\bDELETE\s+FROM", "批量删数据"),
     (r"\bTRUNCATE\b", "清空表数据"),
     (r"format\s+[a-zA-Z]:", "格式化磁盘"),
-    (r">\s*/dev/", "裸写设备"),
+    (r">\s*/dev/(?!null\b)", "裸写设备"),
     (r"dd\s+if=", "磁盘镜像写入"),
 ]
 

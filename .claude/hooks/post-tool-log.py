@@ -9,7 +9,7 @@ STATE_DIR = os.path.expanduser("~/.claude/state")
 os.makedirs(STATE_DIR, exist_ok=True)
 
 try:
-    input_data = json.loads(sys.stdin.read())
+    input_data = json.loads(sys.stdin.buffer.read().decode("utf-8"))
 except:
     input_data = {}
 
