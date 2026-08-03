@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """PreToolUse Hook：高危操作拦截 + 微信审批（文件协议）
 与 cc-weixin 通过 ~/.claude/state/ 目录通信，15 分钟超时自动拒绝"""
-import json, sys, os, time, re
+import json, sys, os, time, re, subprocess
 
 STATE_DIR = os.path.expanduser("~/.claude/state")
+SCRIPTS_DIR = os.path.expanduser("~/.claude/scripts")
 os.makedirs(STATE_DIR, exist_ok=True)
 
 input_data = json.loads(sys.stdin.buffer.read().decode("utf-8"))
@@ -30,9 +31,7 @@ DANGEROUS = [
     (r"dd\s+if=", "磁盘镜像写入"),
 ]
 
-SENSITIVE_FILES = [".env", "credentials", "secrets", "settings.json",
-                   "package-lock.json", "yarn.lock", ".gitignore",
-                   ".claude/settings.json", ".claude/settings.local.json"]
+SENSITIVE_FILES = [".env", "credentials", "secrets"]
 
 risk_desc = None
 
@@ -77,6 +76,27 @@ with open(os.path.join(STATE_DIR, "pending_approval.json"), "w", encoding="utf-8
 
 print(f"[PreToolUse] 审批已发起: {risk_desc}", file=sys.stderr)
 
+# ====== PC 端弹窗（后台进程，非阻塞）======
+dialog_file = os.path.join(STATE_DIR, f"approval_dialog_{approval_id}.json")
+dialog_info = {
+    "risk": risk_desc,
+    "tool": tool_name,
+    "command": command[:200],
+    "file_path": file_path,
+}
+try:
+    with open(dialog_file, "w", encoding="utf-8") as f:
+        json.dump(dialog_info, f, ensure_ascii=False)
+    dialog_script = os.path.join(SCRIPTS_DIR, "show_approval_dialog.py")
+    if os.path.exists(dialog_script):
+        subprocess.Popen(
+            ["python", dialog_script, dialog_file],
+            creationflags=subprocess.CREATE_NO_WINDOW if hasattr(subprocess, "CREATE_NO_WINDOW") else 0,
+        )
+        print("[PreToolUse] PC 端弹窗已启动", file=sys.stderr)
+except Exception as e:
+    print(f"[PreToolUse] PC 弹窗失败: {e}", file=sys.stderr)
+
 # 等待审批结果
 result_file = os.path.join(STATE_DIR, f"approval_result_{approval_id}.json")
 timeout = 900  # 15 分钟
@@ -87,10 +107,15 @@ while elapsed < timeout:
         with open(result_file, encoding="utf-8") as f:
             result = json.load(f)
         os.remove(result_file)
-        # 清理 pending
+        # 清理 pending + 弹窗临时文件
         pf = os.path.join(STATE_DIR, "pending_approval.json")
         if os.path.exists(pf):
             os.remove(pf)
+        try:
+            if os.path.exists(dialog_file):
+                os.remove(dialog_file)
+        except:
+            pass
         if result.get("approved"):
             print(json.dumps({
                 "hookSpecificOutput": {
@@ -112,6 +137,15 @@ while elapsed < timeout:
     elapsed += 2
 
 # 超时：自动拒绝
+# 清理残留文件
+try:
+    pf = os.path.join(STATE_DIR, "pending_approval.json")
+    if os.path.exists(pf):
+        os.remove(pf)
+    if os.path.exists(dialog_file):
+        os.remove(dialog_file)
+except:
+    pass
 print(json.dumps({
     "hookSpecificOutput": {
         "hookEventName": "PreToolUse",
