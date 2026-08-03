@@ -1,1 +1,5 @@
 node_modules
+.claude/state/
+.claude/cache/
+.claude/task_logs/
+.claude/task_snapshot/
